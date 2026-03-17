@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 import asyncio
 
 TOKEN = "TU_TOKEN_AQUI"
-CANAL_ID = 123456789012345678  # <-- PONER EL ID DEL CANAL
+CANAL_ID = 1483549231246741575  # <-- PONER EL ID DEL CANAL
 
 intents = discord.Intents.default()
 intents.message_content = True
