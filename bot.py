@@ -6,7 +6,7 @@ import os
 from zoneinfo import ZoneInfo
 
 # ================= CONFIG =================
-CANAL_ID = 1483549231246741575
+CANAL_ID = 1184488420861546569
 RESPAWN = timedelta(hours=2, minutes=5)
 
 # ==========================================
