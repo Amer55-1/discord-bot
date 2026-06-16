@@ -22,8 +22,11 @@ timers = {
     "ch4": {"spawn": None, "task": None}
 }
 
+# 🔥 CAMBIO IMPORTANTE: ahora incluye countdown automático de Discord
 def timestamp_discord(dt):
-    return f"<t:{int(dt.timestamp())}:t>"
+    ts = int(dt.timestamp())
+    return f"<t:{ts}:t> (<t:{ts}:R>)"
+
 
 # ================= LOOP =================
 async def ciclo_boss(channel, boss):
@@ -34,7 +37,6 @@ async def ciclo_boss(channel, boss):
 
             ahora = datetime.now(timezone.utc)
 
-            # Corrige spawn en el pasado sumando respawns hasta futuro
             while spawn_time <= ahora:
                 spawn_time += RESPAWN
 
@@ -74,9 +76,11 @@ async def ciclo_boss(channel, boss):
             ts = timestamp_discord(spawn_time)
             await channel.send(f"{boss.upper()} Next Spawn {ts} (auto)")
 
+
     except asyncio.CancelledError:
         print(f"ciclo_boss task for {boss} cancelled")
         pass
+
 
 # ================= PARSE NY =================
 def parse_ny_time(hour_str):
@@ -96,10 +100,12 @@ def parse_ny_time(hour_str):
     except:
         return None
 
+
 # ================= BOT EVENTS =================
 @bot.event
 async def on_ready():
     print(f"Bot conectado como {bot.user}")
+
 
 @bot.event
 async def on_message(message):
@@ -115,7 +121,6 @@ async def on_message(message):
     if content in ["ch2", "ch4"]:
         boss = content
 
-        # Cancelar y esperar tarea previa
         if timers[boss]["task"]:
             timers[boss]["task"].cancel()
             try:
@@ -137,7 +142,8 @@ async def on_message(message):
         task = bot.loop.create_task(ciclo_boss(message.channel, boss))
         timers[boss]["task"] = task
 
-    # ===== RESET DESDE HORA NY =====
+
+    # ===== RESET =====
     elif content.startswith("reset"):
         parts = content.split()
 
@@ -158,7 +164,6 @@ async def on_message(message):
 
         spawn = muerte + timedelta(hours=2)
 
-        # Cancelar y esperar tarea previa
         if timers[boss]["task"]:
             timers[boss]["task"].cancel()
             try:
@@ -176,6 +181,7 @@ async def on_message(message):
 
         task = bot.loop.create_task(ciclo_boss(message.channel, boss))
         timers[boss]["task"] = task
+
 
     # ===== DELETE =====
     elif content in ["delete ch2", "delete ch4"]:
@@ -197,6 +203,7 @@ async def on_message(message):
             await message.channel.send(f"No active timer for {boss.upper()}")
 
     await bot.process_commands(message)
+
 
 # ================= RUN =================
 TOKEN = os.getenv("TOKEN")
