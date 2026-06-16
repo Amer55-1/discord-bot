@@ -14,6 +14,7 @@ BOSS_ROLE_ID = 1516505086686396496
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True  # 🔥 NECESARIO PARA ROLES
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -29,8 +30,36 @@ def timestamp_discord(dt):
     return f"<t:{ts}:t> (<t:{ts}:R>)"
 
 
-def boss_ping():
-    return f"<@&{BOSS_ROLE_ID}>"
+def boss_role(guild):
+    return guild.get_role(BOSS_ROLE_ID)
+
+
+# ================= BOTONES =================
+class BossRoleView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Unirme a Boss-Timer", style=discord.ButtonStyle.green)
+    async def join(self, interaction: discord.Interaction, button: discord.ui.Button):
+        role = boss_role(interaction.guild)
+
+        if role in interaction.user.roles:
+            await interaction.response.send_message("Ya tienes el rol.", ephemeral=True)
+            return
+
+        await interaction.user.add_roles(role)
+        await interaction.response.send_message("Te uniste a Boss-Timer ✅", ephemeral=True)
+
+    @discord.ui.button(label="Salir del Boss-Timer", style=discord.ButtonStyle.red)
+    async def leave(self, interaction: discord.Interaction, button: discord.ui.Button):
+        role = boss_role(interaction.guild)
+
+        if role not in interaction.user.roles:
+            await interaction.response.send_message("No tienes ese rol.", ephemeral=True)
+            return
+
+        await interaction.user.remove_roles(role)
+        await interaction.response.send_message("Saliste del Boss-Timer ❌", ephemeral=True)
 
 
 # ================= LOOP =================
@@ -52,25 +81,23 @@ async def ciclo_boss(channel, boss):
 
             ahora = datetime.now(timezone.utc)
 
-            # 🔥 10 MIN
             if aviso_10 > ahora:
                 await asyncio.sleep((aviso_10 - ahora).total_seconds())
                 if not timers[boss]["spawn"]:
                     return
                 await channel.send(
-                    f"{boss.upper()} Boss in 10 min {boss_ping()}",
+                    f"{boss.upper()} Boss in 10 min <@&{BOSS_ROLE_ID}>",
                     allowed_mentions=discord.AllowedMentions(roles=True)
                 )
 
             ahora = datetime.now(timezone.utc)
 
-            # 🔥 5 MIN
             if aviso_5 > ahora:
                 await asyncio.sleep((aviso_5 - ahora).total_seconds())
                 if not timers[boss]["spawn"]:
                     return
                 await channel.send(
-                    f"{boss.upper()} Boss in 5 min {boss_ping()}",
+                    f"{boss.upper()} Boss in 5 min <@&{BOSS_ROLE_ID}>",
                     allowed_mentions=discord.AllowedMentions(roles=True)
                 )
 
@@ -90,7 +117,6 @@ async def ciclo_boss(channel, boss):
 
             ts = timestamp_discord(spawn_time)
             await channel.send(f"{boss.upper()} Next Spawn {ts} (auto)")
-
 
     except asyncio.CancelledError:
         print(f"ciclo_boss task for {boss} cancelled")
@@ -116,10 +142,17 @@ def parse_ny_time(hour_str):
         return None
 
 
-# ================= BOT EVENTS =================
+# ================= EVENTS =================
 @bot.event
 async def on_ready():
     print(f"Bot conectado como {bot.user}")
+
+    channel = bot.get_channel(CANAL_ID)
+    if channel:
+        await channel.send(
+            "🎯 Boss Timer Panel",
+            view=BossRoleView()
+        )
 
 
 @bot.event
