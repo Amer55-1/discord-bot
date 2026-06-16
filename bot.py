@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 # ================= CONFIG =================
 CANAL_ID = 1483549231246741575
 RESPAWN = timedelta(hours=2, minutes=5)
+BOSS_ROLE_ID = 1516505086686396496
 
 # ==========================================
 
@@ -22,10 +23,14 @@ timers = {
     "ch4": {"spawn": None, "task": None}
 }
 
-# 🔥 CAMBIO IMPORTANTE: ahora incluye countdown automático de Discord
+# ================= HELPERS =================
 def timestamp_discord(dt):
     ts = int(dt.timestamp())
     return f"<t:{ts}:t> (<t:{ts}:R>)"
+
+
+def boss_ping():
+    return f"<@&{BOSS_ROLE_ID}>"
 
 
 # ================= LOOP =================
@@ -46,18 +51,28 @@ async def ciclo_boss(channel, boss):
             aviso_5 = spawn_time - timedelta(minutes=5)
 
             ahora = datetime.now(timezone.utc)
+
+            # 🔥 10 MIN
             if aviso_10 > ahora:
                 await asyncio.sleep((aviso_10 - ahora).total_seconds())
                 if not timers[boss]["spawn"]:
                     return
-                await channel.send(f"{boss.upper()} Boss in 10 min")
+                await channel.send(
+                    f"{boss.upper()} Boss in 10 min {boss_ping()}",
+                    allowed_mentions=discord.AllowedMentions(roles=True)
+                )
 
             ahora = datetime.now(timezone.utc)
+
+            # 🔥 5 MIN
             if aviso_5 > ahora:
                 await asyncio.sleep((aviso_5 - ahora).total_seconds())
                 if not timers[boss]["spawn"]:
                     return
-                await channel.send(f"{boss.upper()} Boss in 5 min")
+                await channel.send(
+                    f"{boss.upper()} Boss in 5 min {boss_ping()}",
+                    allowed_mentions=discord.AllowedMentions(roles=True)
+                )
 
             ahora = datetime.now(timezone.utc)
             wait_time = (spawn_time - ahora).total_seconds()
