@@ -1,3 +1,4 @@
+
 import discord
 from discord.ext import commands
 from datetime import datetime, timedelta, timezone
@@ -9,6 +10,8 @@ from zoneinfo import ZoneInfo
 CANAL_ID = 1483549231246741575
 RESPAWN = timedelta(hours=2, minutes=5)
 BOSS_ROLE_ID = 1516505086686396496
+CANAL_BOTONES_ID = 1515422185462956082
+PANEL_BOTONES_ID = None
 # ==========================================
 
 intents = discord.Intents.default()
