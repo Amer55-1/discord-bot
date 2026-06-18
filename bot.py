@@ -10,8 +10,7 @@ from zoneinfo import ZoneInfo
 CANAL_ID = 1483549231246741575
 RESPAWN = timedelta(hours=2, minutes=5)
 BOSS_ROLE_ID = 1516505086686396496
-CANAL_BOTONES_ID = 1515422185462956082
-PANEL_BOTONES_ID = None
+ROLE_PANEL_CHANNEL_ID = 1515422185462956082
 # ==========================================
 
 intents = discord.Intents.default()
@@ -140,10 +139,21 @@ def parse_ny_time(hour_str):
 @bot.event
 async def on_ready():
     print(f"Bot listo como {bot.user}")
-    channel = bot.get_channel(CANAL_ID)
-    if channel:
-        
-        pass
+    bot.add_view(BossRoleView())
+    panel_channel = bot.get_channel(ROLE_PANEL_CHANNEL_ID)
+    if panel_channel:
+        found = False
+        async for msg in panel_channel.history(limit=20):
+            if msg.author == bot.user and msg.components:
+                found = True
+                break
+        if not found:
+            await panel_channel.send(
+                "## 🔔 Boss Timer Notifications\n\n"
+                "Receive a **DM** whenever a boss is about to spawn.\n\n"
+                "Use the buttons below to join or leave the notification role.",
+                view=BossRoleView()
+            )
 
 @bot.event
 async def on_message(message):
