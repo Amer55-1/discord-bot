@@ -139,21 +139,38 @@ def parse_ny_time(hour_str):
 @bot.event
 async def on_ready():
     print(f"Bot listo como {bot.user}")
+
     bot.add_view(BossRoleView())
+
     panel_channel = bot.get_channel(ROLE_PANEL_CHANNEL_ID)
-    if panel_channel:
-        found = False
-        async for msg in panel_channel.history(limit=20):
-            if msg.author == bot.user and msg.components:
-                found = True
-                break
-        if not found:
-            await panel_channel.send(
-                "## 🔔 Boss Timer Notifications\n\n"
-                "Receive a **DM** whenever a boss is about to spawn.\n\n"
-                "Use the buttons below to join or leave the notification role.",
-                view=BossRoleView()
-            )
+
+    print("Canal:", panel_channel)
+
+    if panel_channel is None:
+        print("❌ No se encontró el canal")
+        return
+
+    found = False
+
+    async for msg in panel_channel.history(limit=20):
+        print("Mensaje encontrado:", msg.id)
+
+        if msg.author.id == bot.user.id and msg.components:
+            print("✅ Panel ya existe")
+            found = True
+            break
+
+    if not found:
+        print("📨 Creando panel...")
+
+        await panel_channel.send(
+            "## 🔔 Boss Timer Notifications\n\n"
+            "Receive a **DM** whenever a boss is about to spawn.\n\n"
+            "Use the buttons below to join or leave the notification role.",
+            view=BossRoleView()
+        )
+
+        print("✅ Panel enviado")
 
 @bot.event
 async def on_message(message):
