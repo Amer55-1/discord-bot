@@ -1,3 +1,4 @@
+
 import discord
 from discord.ext import commands
 from datetime import datetime, timedelta, timezone
@@ -28,9 +29,6 @@ def timestamp_discord(dt):
 
 def boss_role(guild):
     return guild.get_role(BOSS_ROLE_ID)
-
-def boss_ping():
-    return f"<@&{BOSS_ROLE_ID}>"
 
 async def enviar_dm_rol(guild, mensaje):
     role = guild.get_role(BOSS_ROLE_ID)
@@ -95,8 +93,7 @@ async def ciclo_boss(channel, boss):
                 await asyncio.sleep((aviso_10 - now).total_seconds())
                 if not timers[boss]["spawn"]:
                     return
-                await channel.send(f"{boss.upper()} Boss in 10 min {boss_ping()}",
-                                   allowed_mentions=discord.AllowedMentions(roles=True))
+                await channel.send(f"{boss.upper()} Boss in 10 min")
                 await enviar_dm_rol(guild, f"🔔 {boss.upper()} Boss in 10 minutes!")
 
             now = datetime.now(timezone.utc)
@@ -104,8 +101,7 @@ async def ciclo_boss(channel, boss):
                 await asyncio.sleep((aviso_5 - now).total_seconds())
                 if not timers[boss]["spawn"]:
                     return
-                await channel.send(f"{boss.upper()} Boss in 5 min {boss_ping()}",
-                                   allowed_mentions=discord.AllowedMentions(roles=True))
+                await channel.send(f"{boss.upper()} Boss in 5 min")
                 await enviar_dm_rol(guild, f"⚠️ {boss.upper()} Boss in 5 minutes!")
 
             now = datetime.now(timezone.utc)
@@ -120,7 +116,7 @@ async def ciclo_boss(channel, boss):
 
             spawn_time += RESPAWN
             timers[boss]["spawn"] = spawn_time
-            await channel.send(f"{boss.upper()} Next Spawn {timestamp_discord(spawn_time)} (auto)")
+
     except asyncio.CancelledError:
         print("Task cancelada")
 
@@ -136,12 +132,32 @@ def parse_ny_time(hour_str):
     except:
         return None
 
+
+PANEL_MESSAGE_ID_FILE="panel_message_id.txt"
+
+async def ensure_panel(channel):
+    mid=None
+    try:
+        if os.path.exists(PANEL_MESSAGE_ID_FILE):
+            mid=int(open(PANEL_MESSAGE_ID_FILE).read().strip())
+    except: mid=None
+    if mid:
+        try:
+            await channel.fetch_message(mid)
+            return
+        except:
+            pass
+    msg=await channel.send("🎯 Boss Timer Panel", view=BossRoleView())
+    with open(PANEL_MESSAGE_ID_FILE,"w") as f:
+        f.write(str(msg.id))
+
+
 @bot.event
 async def on_ready():
     print(f"Bot listo como {bot.user}")
     channel = bot.get_channel(CANAL_ID)
     if channel:
-        await channel.send("🎯 Boss Timer Panel", view=BossRoleView())
+        await ensure_panel(channel)
 
 @bot.event
 async def on_message(message):
@@ -154,7 +170,7 @@ async def on_message(message):
         boss = content
         if timers[boss]["task"]:
             timers[boss]["task"].cancel()
-        spawn = datetime.now(timezone.utc) + timedelta(hours=2)
+        spawn = datetime.now(timezone.utc) + RESPAWN
         timers[boss]["spawn"] = spawn
         await message.channel.send(f"Boss {boss.upper()} Dead, Next Spawn {timestamp_discord(spawn)}")
         timers[boss]["task"] = bot.loop.create_task(ciclo_boss(message.channel,boss))
@@ -169,7 +185,7 @@ async def on_message(message):
         death = parse_ny_time(hora)
         if not death:
             return await message.channel.send("Invalid time HH:MM")
-        spawn = death + timedelta(hours=2)
+        spawn = death + RESPAWN
         if timers[boss]["task"]:
             timers[boss]["task"].cancel()
         timers[boss]["spawn"] = spawn
